@@ -66,7 +66,7 @@
 
             <!-- Login Form -->
             <form id="login-form" onsubmit="event.preventDefault(); handleLogin();">
-                <input type="email" id="login-email" placeholder="อีเมล" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="login-student-id" placeholder="รหัสนักเรียน" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-blue-500">
                 <input type="password" id="login-password" placeholder="รหัสผ่าน" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none focus:ring-2 focus:ring-blue-500">
                 <button type="submit" class="w-full gradient-bg text-white font-bold rounded-xl py-3 shadow-lg active:scale-95 transition">เข้าสู่ระบบ</button>
                 <p class="text-center mt-4 text-sm text-slate-500">ยังไม่มีบัญชี? <span onclick="toggleAuthMode()" class="text-blue-600 font-bold cursor-pointer">ลงทะเบียน</span></p>
@@ -79,8 +79,7 @@
                 </div>
                 <input type="text" id="reg-name" placeholder="ชื่อ-นามสกุล" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-blue-500">
                 <input type="text" id="reg-student-id" placeholder="รหัสนักเรียน" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="email" id="reg-email" placeholder="อีเมล" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="password" id="reg-password" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="reg-password" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none focus:ring-2 focus:ring-blue-500">
                 <input type="text" id="reg-secret" placeholder="รหัสลับ (ถ้ามี)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 <button type="submit" class="w-full gradient-bg text-white font-bold rounded-xl py-3 shadow-lg active:scale-95 transition">ลงทะเบียน</button>
                 <p class="text-center mt-4 text-sm text-slate-500">มีบัญชีแล้ว? <span onclick="toggleAuthMode()" class="text-blue-600 font-bold cursor-pointer">เข้าสู่ระบบ</span></p>
@@ -154,6 +153,14 @@
 
                 <!-- Waste Bank Tab -->
                 <div id="section-waste-bank" class="hidden">
+                    <div id="admin-waste-search" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-blue-100 mb-4">
+                        <h4 class="font-bold text-slate-700 mb-2 text-sm">ค้นหานักเรียน (Admin)</h4>
+                        <div class="flex gap-2">
+                            <input id="search-student-id" type="text" placeholder="รหัสนักเรียน..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm outline-none">
+                            <button onclick="searchStudentAndAddStamp()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold">เพิ่มแต้ม</button>
+                        </div>
+                    </div>
+
                     <div class="gradient-bg rounded-2xl p-6 text-white shadow-xl mb-6 relative overflow-hidden">
                         <div class="flex justify-between items-center mb-6 relative z-10">
                             <div><h3 class="font-bold text-xl">บัตรสะสมแต้ม</h3><p class="text-blue-100 text-xs">ธนาคารขยะ</p></div>
@@ -164,7 +171,7 @@
 
                     <button type="button" onclick="startScanner()" class="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 rounded-2xl py-6 font-bold flex flex-col items-center justify-center hover:bg-blue-50 transition shadow-sm">
                         <i class="fa-solid fa-qrcode text-3xl mb-2"></i>
-                        <span>สแกน QR รับแต้มขยะ</span>
+                        <span>สแกน QR รับแต้มขยะ / กิจกรรม</span>
                     </button>
                 </div>
             </div>
@@ -270,6 +277,9 @@
                 <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-xl"></i></button>
                 <h3 class="font-bold text-lg mb-2" id="qr-modal-title">QR Code</h3>
                 <div id="qr-modal-canvas" class="flex justify-center my-4"></div>
+                <button id="download-qr-btn" onclick="downloadQRCode()" class="w-full bg-blue-600 text-white rounded-xl py-2 font-bold mb-4 hidden">
+                    <i class="fa-solid fa-download mr-2"></i> ดาวน์โหลด QR Code
+                </button>
                 <p class="text-sm text-slate-500" id="qr-modal-desc">...</p>
             </div>
         </div>
@@ -294,35 +304,46 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const APP_ID = "student-council-v3"; // New Version ID
+        const APP_ID = "student-council-v3";
 
         let currentUser = null;
         let userData = null;
         let scannerObj = null;
 
+        // --- Persistence ---
+        function saveToLocal(key, data) {
+            localStorage.setItem(`${APP_ID}_${key}`, JSON.stringify(data));
+        }
+        function getFromLocal(key) {
+            const data = localStorage.getItem(`${APP_ID}_${key}`);
+            return data ? JSON.parse(data) : null;
+        }
+
         // --- Auth ---
         window.handleLogin = async () => {
-            const email = document.getElementById('login-email').value;
+            const studentId = document.getElementById('login-student-id').value.trim();
             const password = document.getElementById('login-password').value;
-            if(!email || !password) return showToast('กรุณากรอกข้อมูล', 'warning');
+            if(!studentId || !password) return showToast('กรุณากรอกข้อมูล', 'warning');
+            
+            const email = `${studentId}@student.local`;
+            
             try {
                 showLoading();
                 await signInWithEmailAndPassword(auth, email, password);
-                // Auth listener handles the rest
             } catch (error) {
                 hideLoading();
-                Swal.fire('ผิดพลาด', 'อีเมลหรือรหัสผ่านไม่ถูกต้อง', 'error');
+                Swal.fire('ผิดพลาด', 'รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง', 'error');
             }
         };
 
         window.handleRegister = async () => {
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
             const name = document.getElementById('reg-name').value;
             const studentId = document.getElementById('reg-student-id').value.trim();
+            const password = document.getElementById('reg-password').value;
             const secret = document.getElementById('reg-secret').value;
 
-            if(!email || !password || !name || !studentId) return showToast('ข้อมูลไม่ครบ', 'warning');
+            if(!name || !studentId || !password) return showToast('ข้อมูลไม่ครบ', 'warning');
+            const email = `${studentId}@student.local`;
 
             try {
                 showLoading();
@@ -330,35 +351,88 @@
                 const user = userCredential.user;
                 const isAdmin = secret === "ADMIN1234";
 
-                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', user.uid), {
+                const profileData = {
                     uid: user.uid, name: name, studentId: studentId, email: email,
                     role: isAdmin ? 'admin' : 'student',
                     goodPoints: 0, wastePoints: 0
-                });
+                };
+                
+                await setDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', user.uid), profileData);
                 await updateProfile(user, { displayName: name });
+                saveToLocal('user_data', profileData);
                 Swal.fire('สำเร็จ', 'ลงทะเบียนเรียบร้อย', 'success');
             } catch (error) {
                 hideLoading();
                 Swal.fire('ผิดพลาด', error.message, 'error');
             }
         };
-        window.handleLogout = () => signOut(auth);
+        window.handleLogout = () => {
+            localStorage.removeItem(`${APP_ID}_user_data`);
+            signOut(auth);
+        };
         window.toggleAuthMode = () => {
             document.getElementById('login-form').classList.toggle('hidden');
             document.getElementById('register-form').classList.toggle('hidden');
         };
 
+        // --- Admin Tools ---
+        window.searchStudentAndAddStamp = async () => {
+            const sId = document.getElementById('search-student-id').value.trim();
+            if(!sId) return;
+            
+            try {
+                showLoading();
+                const q = query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users'), where("studentId", "==", sId));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    hideLoading();
+                    return Swal.fire('ไม่พบข้อมูล', 'ไม่พบรหัสนักเรียนนี้ในระบบ', 'error');
+                }
+                
+                const studentDoc = querySnapshot.docs[0];
+                const studentData = studentDoc.data();
+                const newStamps = (studentData.wastePoints || 0) + 10; // Change to +10 for a full stamp
+                
+                await updateDoc(studentDoc.ref, { wastePoints: newStamps });
+                hideLoading();
+                Swal.fire('สำเร็จ', `เพิ่มแต้มให้ ${studentData.name} แล้ว (รวม ${newStamps})`, 'success');
+                document.getElementById('search-student-id').value = '';
+            } catch (e) {
+                hideLoading();
+                console.error(e);
+            }
+        };
+
+        window.downloadQRCode = () => {
+            const canvas = document.querySelector('#qr-modal-canvas canvas');
+            if(!canvas) return;
+            const link = document.createElement('a');
+            link.download = 'student-council-qr.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+
         // --- App ---
         function initApp(user) {
             currentUser = user;
+            const localData = getFromLocal('user_data');
+            if(localData) {
+                userData = localData;
+                renderProfile(userData);
+                renderStampCard(userData.wastePoints || 0);
+            }
+
             onSnapshot(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', user.uid), (docSnap) => {
                 if (docSnap.exists()) {
                     userData = docSnap.data();
+                    saveToLocal('user_data', userData);
                     renderProfile(userData);
                     if (userData.role === 'admin') {
                         document.getElementById('admin-badge').classList.remove('hidden');
                         document.getElementById('admin-panel').classList.remove('hidden');
                         document.getElementById('admin-post-box').classList.remove('hidden');
+                        document.getElementById('admin-waste-search').classList.remove('hidden');
                         loadAdminTasks();
                     }
                     renderStampCard(userData.wastePoints || 0);
@@ -385,24 +459,22 @@
 
         window.stopScanner = async () => {
             document.getElementById('scanner-overlay').classList.add('hidden');
-            if(scannerObj) { await scannerObj.stop(); scannerObj.clear(); scannerObj = null; }
+            if(scannerObj) { try { await scannerObj.stop(); } catch(e){} scannerObj.clear(); scannerObj = null; }
         };
 
-        async function onScanSuccess(decodedText, decodedResult) {
+        async function onScanSuccess(decodedText) {
             await window.stopScanner();
             showLoading('กำลังตรวจสอบ...');
 
             try {
-                // CASE 1: Morning Check-in (Permanent Code)
                 if (decodedText === 'SCHOOL-CHECKIN-MORNING') {
                     await handleMorningCheckin();
-                } 
-                // CASE 2: Waste Bank (Dynamic Code)
-                else if (decodedText.startsWith('QR-')) {
+                } else if (decodedText.startsWith('QR-')) {
                     await handleWasteBankQR(decodedText);
-                } 
-                else {
-                    throw new Error('QR Code ไม่รู้จักในระบบ');
+                } else if (decodedText.startsWith('ACTIVITY:')) {
+                    await handleGenericActivity(decodedText);
+                } else {
+                    Swal.fire('ข้อมูล QR', decodedText, 'info');
                 }
             } catch (error) {
                 Swal.fire('ไม่สำเร็จ', error.message, 'error');
@@ -412,20 +484,16 @@
         }
 
         async function handleMorningCheckin() {
-            // 1. Time Check (06:00 - 07:50)
             const now = new Date();
             const hour = now.getHours();
             const min = now.getMinutes();
+            const timeVal = hour * 100 + min;
             
-            // Logic: Must be >= 06:00 AND <= 07:50
-            const isValidTime = (hour === 6) || (hour === 7 && min <= 50);
-            
-            if (!isValidTime) {
+            if (timeVal < 600 || timeVal > 750) {
                 throw new Error('สแกนได้เฉพาะเวลา 06:00 - 07:50 น. เท่านั้น');
             }
 
-            // 2. Duplicate Check (One per day)
-            const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            const todayStr = now.toISOString().split('T')[0];
             const checkinId = `${todayStr}_${currentUser.uid}`;
             const checkinRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'daily_attendance', checkinId);
             
@@ -434,25 +502,15 @@
                 throw new Error('วันนี้คุณสแกนเช็คชื่อไปแล้ว');
             }
 
-            // 3. Success -> Save & Add Point
             await setDoc(checkinRef, {
-                uid: currentUser.uid,
-                timestamp: now,
-                studentId: userData.studentId,
-                name: userData.name
+                uid: currentUser.uid, timestamp: now, studentId: userData.studentId, name: userData.name
             });
 
-            const userRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid);
-            await updateDoc(userRef, {
-                goodPoints: (userData.goodPoints || 0) + 1
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), {
+                goodPoints: (userData.goodPoints || 0) + 5
             });
 
-            Swal.fire({
-                icon: 'success',
-                title: 'เช็คชื่อสำเร็จ',
-                text: 'ได้รับแต้มความดี +1 (มาเช้า)',
-                timer: 2000, showConfirmButton: false
-            });
+            Swal.fire({ icon: 'success', title: 'เช็คชื่อสำเร็จ', text: '+5 แต้มความดี', timer: 2000, showConfirmButton: false });
         }
 
         async function handleWasteBankQR(qrId) {
@@ -466,26 +524,36 @@
             if (qrData.usedBy && qrData.usedBy.includes(currentUser.uid)) throw new Error('ใช้โค้ดนี้ไปแล้ว');
 
             await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), {
-                wastePoints: (userData.wastePoints || 0) + 10
+                wastePoints: (userData.wastePoints || 0) + (qrData.points || 10)
             });
 
             const usedBy = qrData.usedBy || [];
             usedBy.push(currentUser.uid);
             await updateDoc(qrRef, { usedBy });
 
-            Swal.fire({ icon: 'success', title: 'สะสมแต้มขยะสำเร็จ', text: '+10 คะแนน' });
+            Swal.fire({ icon: 'success', title: 'สะสมแต้มสำเร็จ', text: `+${qrData.points || 10} คะแนน` });
+        }
+
+        async function handleGenericActivity(text) {
+            const actName = text.split(':')[1] || 'กิจกรรม';
+            await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), {
+                goodPoints: (userData.goodPoints || 0) + 10
+            });
+            Swal.fire({ icon: 'success', title: 'ร่วมกิจกรรมสำเร็จ', text: `${actName} (+10 แต้ม)` });
         }
 
         // --- Admin QR Generators ---
         window.showMorningQR = () => {
             const modal = document.getElementById('qr-modal');
-            const canvas = document.getElementById('qr-modal-canvas');
-            canvas.innerHTML = '';
+            const canvasDiv = document.getElementById('qr-modal-canvas');
+            const downloadBtn = document.getElementById('download-qr-btn');
+            canvasDiv.innerHTML = '';
             
-            new QRCode(canvas, { text: "SCHOOL-CHECKIN-MORNING", width: 200, height: 200 });
+            new QRCode(canvasDiv, { text: "SCHOOL-CHECKIN-MORNING", width: 256, height: 256 });
             
             document.getElementById('qr-modal-title').innerText = "QR เช็คชื่อเช้า (ถาวร)";
-            document.getElementById('qr-modal-desc').innerText = "ปริ้นท์ติดบอร์ดได้เลย (สแกนได้ 06:00-07:50)";
+            document.getElementById('qr-modal-desc').innerText = "สแกนได้เฉพาะเวลา 06:00 - 07:50 น.";
+            downloadBtn.classList.remove('hidden');
             modal.classList.remove('hidden');
         };
 
@@ -497,12 +565,14 @@
             });
             
             const modal = document.getElementById('qr-modal');
-            const canvas = document.getElementById('qr-modal-canvas');
-            canvas.innerHTML = '';
-            new QRCode(canvas, { text: qrId, width: 200, height: 200 });
+            const canvasDiv = document.getElementById('qr-modal-canvas');
+            const downloadBtn = document.getElementById('download-qr-btn');
+            canvasDiv.innerHTML = '';
+            new QRCode(canvasDiv, { text: qrId, width: 256, height: 256 });
             
             document.getElementById('qr-modal-title').innerText = "QR ธนาคารขยะ (5 นาที)";
-            document.getElementById('qr-modal-desc').innerText = "สำหรับแจกแต้มเฉพาะกิจ (หมดอายุใน 5 นาที)";
+            document.getElementById('qr-modal-desc').innerText = "สำหรับแจกแต้มเฉพาะกิจ";
+            downloadBtn.classList.remove('hidden');
             modal.classList.remove('hidden');
         };
 
@@ -593,7 +663,7 @@
         function renderProfile(data) {
             document.getElementById('user-greeting').innerText = data.name;
             document.getElementById('profile-name').innerText = data.name;
-            document.getElementById('profile-id').innerText = data.studentId;
+            document.getElementById('profile-id').innerText = `ID: ${data.studentId}`;
             document.getElementById('profile-avatar').innerText = data.name[0];
             document.getElementById('profile-good-points').innerText = data.goodPoints || 0;
             document.getElementById('profile-waste-points').innerText = data.wastePoints || 0;
@@ -617,7 +687,8 @@
             document.getElementById('page-'+t).classList.remove('hidden');
             document.getElementById('header-title').innerText = {'home':'ประกาศ','activity':'กิจกรรม','report':'แจ้งปัญหา','profile':'โปรไฟล์'}[t];
             document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active-nav','text-blue-600'));
-            document.querySelector(`[data-target="${t}"]`).classList.add('active-nav','text-blue-600');
+            const btn = document.querySelector(`[data-target="${t}"]`);
+            if(btn) btn.classList.add('active-nav','text-blue-600');
         };
         const showLoading = (m) => document.getElementById('loading-screen').classList.remove('hidden');
         const hideLoading = () => document.getElementById('loading-screen').classList.add('hidden');
