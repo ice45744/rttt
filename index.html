@@ -346,15 +346,12 @@
                         <h3 class="font-bold text-lg mb-4 text-center">แก้ไขข้อมูลส่วนตัว</h3>
                         
                         <div class="mb-6">
-                            <label class="text-xs font-bold text-slate-500 mb-2 block text-center">เลือกรูปโปรไฟล์ หรือ วางลิงก์รูปภาพ</label>
-                            <div class="grid grid-cols-4 gap-3 mb-4" id="avatar-selector">
-                                <!-- Avatars will be injected here -->
-                            </div>
-                            <input type="url" id="edit-avatar-link" placeholder="วางลิงก์รูปภาพของคุณที่นี่..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            <label class="text-xs font-bold text-slate-500 mb-2 block text-center">วางลิงก์รูปภาพของคุณที่นี่...</label>
+                            <input type="url" id="edit-avatar-link" placeholder="https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
-                        <input type="text" id="edit-name" placeholder="ชื่อ-นามสกุล (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none">
-                        <input type="text" id="edit-student-id" placeholder="รหัสนักเรียน (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none">
+                        <input type="text" id="edit-name" placeholder="ชื่อ-นามสกุล" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-3 outline-none">
+                        <input type="text" id="edit-student-id" placeholder="รหัสนักเรียน" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6 outline-none">
                         <div class="flex gap-3">
                             <button onclick="document.getElementById('settings-modal').classList.add('hidden')" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold">ยกเลิก</button>
                             <button onclick="updateUserData()" class="flex-1 gradient-bg text-white py-3 rounded-xl font-bold">บันทึก</button>
@@ -362,7 +359,7 @@
                     </div>
                 </div>
 
-                <button onclick="document.getElementById('settings-modal').classList.remove('hidden'); document.getElementById('edit-name').value = ''; document.getElementById('edit-student-id').value = ''; document.getElementById('edit-avatar-link').value = ''; initAvatarSelector();" class="w-full bg-blue-50 text-blue-600 rounded-xl py-3 font-bold mb-3">ตั้งค่าโปรไฟล์</button>
+                <button onclick="document.getElementById('settings-modal').classList.remove('hidden'); document.getElementById('edit-name').value = userData.name; document.getElementById('edit-student-id').value = userData.studentId; document.getElementById('edit-avatar-link').value = userData.avatar || '';" class="w-full bg-blue-50 text-blue-600 rounded-xl py-3 font-bold mb-3">ตั้งค่าโปรไฟล์</button>
                 <button onclick="handleLogout()" class="w-full bg-white border border-red-100 text-red-500 rounded-xl py-3 font-bold hover:bg-red-50 mb-8">ออกจากระบบ</button>
             </div>
         </main>
@@ -586,25 +583,16 @@
             const newName = document.getElementById('edit-name').value.trim();
             const newSId = document.getElementById('edit-student-id').value.trim();
             const customLink = document.getElementById('edit-avatar-link').value.trim();
-            const selectedAvatar = document.querySelector('.avatar-option.ring-2')?.dataset.avatar;
             
-            // Build update object only with provided values
-            const updates = {};
-            if (newName) updates.name = newName;
-            if (newSId) updates.studentId = newSId;
-            
-            // Handle avatar: priority to custom link, then selected avatar, then current avatar
-            const finalAvatar = customLink || selectedAvatar;
-            if (finalAvatar) updates.avatar = finalAvatar;
-            
-            if (Object.keys(updates).length === 0) {
-                document.getElementById('settings-modal').classList.add('hidden');
-                return;
-            }
+            if(!newName || !newSId) return;
 
             try {
                 showLoading();
-                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), updates);
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), {
+                    name: newName,
+                    studentId: newSId,
+                    avatar: customLink || userData.avatar || ''
+                });
                 document.getElementById('settings-modal').classList.add('hidden');
                 hideLoading();
                 Swal.fire('สำเร็จ', 'อัปเดตข้อมูลเรียบร้อย', 'success');
