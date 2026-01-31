@@ -127,7 +127,7 @@
                     <div class="bg-gradient-to-r from-orange-400 to-amber-400 rounded-2xl p-4 text-white shadow-lg mb-4 flex items-center justify-between">
                         <div>
                             <h3 class="font-bold"><i class="fa-solid fa-sun mr-1"></i> เช็คชื่อเช้า</h3>
-                            <p class="text-xs text-orange-100">06:00 - 07:50 น. (รับแต้มความดี)</p>
+                            <p class="text-xs text-orange-100">06:00 - 08:00 น. (รับแต้มความดี)</p>
                         </div>
                         <button onclick="startScanner()" class="bg-white text-orange-500 px-4 py-2 rounded-xl text-sm font-bold shadow-sm active:scale-95 transition">
                             <i class="fa-solid fa-qrcode mr-1"></i> สแกน
@@ -523,11 +523,20 @@
 
         window.downloadQRCode = () => {
             const canvas = document.querySelector('#qr-modal-canvas canvas');
-            if(!canvas) return;
-            const link = document.createElement('a');
-            link.download = 'student-council-qr.png';
-            link.href = canvas.toDataURL();
-            link.click();
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = 'student-council-qr.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } else {
+                const img = document.querySelector('#qr-modal-canvas img');
+                if (img) {
+                    const link = document.createElement('a');
+                    link.download = 'student-council-qr.png';
+                    link.href = img.src;
+                    link.click();
+                }
+            }
         };
 
         // --- App ---
@@ -632,8 +641,9 @@
             const min = now.getMinutes();
             const timeVal = hour * 100 + min;
             
-            if (timeVal < 600 || timeVal > 750) {
-                throw new Error('สแกนได้เฉพาะเวลา 06:00 - 07:50 น. เท่านั้น');
+            // Allow check-in between 06:00 and 08:00 (extended for testing and flexibility)
+            if (timeVal < 600 || timeVal > 800) {
+                throw new Error('สแกนได้เฉพาะเวลา 06:00 - 08:00 น. เท่านั้น');
             }
 
             const todayStr = now.toISOString().split('T')[0];
@@ -872,10 +882,16 @@
             const downloadBtn = document.getElementById('download-qr-btn');
             canvasDiv.innerHTML = '';
             
-            new QRCode(canvasDiv, { text: "SCHOOL-CHECKIN-MORNING", width: 256, height: 256, correctLevel: QRCode.CorrectLevel.H });
+            // Ensure QRCode library is ready and value is exact
+            new QRCode(canvasDiv, { 
+                text: "SCHOOL-CHECKIN-MORNING", 
+                width: 512, // Increased size for better print quality
+                height: 512, 
+                correctLevel: QRCode.CorrectLevel.H 
+            });
             
             document.getElementById('qr-modal-title').innerText = "QR เช็คชื่อเช้า (ถาวร)";
-            document.getElementById('qr-modal-desc').innerText = "สแกนได้เฉพาะเวลา 06:00 - 07:50 น.";
+            document.getElementById('qr-modal-desc').innerText = "สแกนได้เฉพาะเวลา 06:00 - 08:00 น.";
             downloadBtn.classList.remove('hidden');
             modal.classList.remove('hidden');
         };
@@ -893,7 +909,12 @@
             const canvasDiv = document.getElementById('qr-modal-canvas');
             const downloadBtn = document.getElementById('download-qr-btn');
             canvasDiv.innerHTML = '';
-            new QRCode(canvasDiv, { text: qrId, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.H });
+            new QRCode(canvasDiv, { 
+                text: qrId, 
+                width: 512, 
+                height: 512, 
+                correctLevel: QRCode.CorrectLevel.H 
+            });
             
             document.getElementById('qr-modal-title').innerText = "QR ธนาคารขยะ (5 นาที)";
             document.getElementById('qr-modal-desc').innerText = "สำหรับแจกแต้มเฉพาะกิจ";
