@@ -173,10 +173,19 @@
                         <div class="grid grid-cols-5 gap-3 relative z-10" id="stamp-grid"></div>
                     </div>
 
-                    <button type="button" onclick="startScanner()" class="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 rounded-2xl py-6 font-bold flex flex-col items-center justify-center hover:bg-blue-50 transition shadow-sm">
+                    <button type="button" onclick="startScanner()" class="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 rounded-2xl py-6 font-bold flex flex-col items-center justify-center hover:bg-blue-50 transition shadow-sm mb-6">
                         <i class="fa-solid fa-qrcode text-3xl mb-2"></i>
                         <span>สแกน QR รับแต้มขยะ / กิจกรรม</span>
                     </button>
+
+                    <!-- Rewards Section -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-slate-700"><i class="fa-solid fa-gift text-purple-500 mr-2"></i>ของรางวัล</h4>
+                            <button onclick="loadRewards()" class="text-xs text-blue-500"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                        <div id="rewards-list" class="grid grid-cols-2 gap-3"></div>
+                    </div>
                 </div>
             </div>
 
@@ -251,6 +260,27 @@
                         <button onclick="generateAdminQR()" id="btn-gen-qr" class="w-full border border-purple-500 text-purple-600 rounded-lg py-2 text-sm font-bold hover:bg-purple-50">
                             <i class="fa-solid fa-qrcode mr-2"></i> สร้าง QR (5 นาที)
                         </button>
+                    </div>
+
+                    <!-- Manage Rewards -->
+                    <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
+                        <h4 class="font-bold text-sm text-slate-700 mb-3"><i class="fa-solid fa-gift text-purple-500 mr-2"></i>จัดการของรางวัล</h4>
+                        <div class="space-y-2 mb-3">
+                            <input id="reward-name" type="text" placeholder="ชื่อของรางวัล" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none">
+                            <input id="reward-desc" type="text" placeholder="รายละเอียด" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none">
+                            <input id="reward-image" type="url" placeholder="ลิงก์รูปภาพ" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none">
+                            <div class="flex gap-2">
+                                <input id="reward-points" type="number" placeholder="แต้มที่ต้องใช้" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none" min="1">
+                                <input id="reward-stock" type="number" placeholder="จำนวน" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none" min="1">
+                            </div>
+                        </div>
+                        <button onclick="addReward()" class="w-full bg-purple-600 text-white rounded-lg py-2 text-sm font-bold">
+                            <i class="fa-solid fa-plus mr-2"></i>เพิ่มของรางวัล
+                        </button>
+                        <div class="mt-4">
+                            <h5 class="text-xs font-bold text-slate-500 mb-2">รายการของรางวัล</h5>
+                            <div id="admin-rewards-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                        </div>
                     </div>
 
                     <!-- Admin Scoreboard -->
@@ -523,12 +553,14 @@
                         loadAdminTasks();
                         loadAdminReports();
                         loadAdminScoreboard();
+                        loadAdminRewards();
                     }
                     renderStampCard(userData.wastePoints || 0);
                 }
             });
             loadAnnouncements();
             loadMyGoodDeeds();
+            loadRewards();
         }
 
         function loadAdminScoreboard() {
@@ -652,6 +684,175 @@
             });
             Swal.fire({ icon: 'success', title: 'ร่วมกิจกรรมสำเร็จ', text: `${actName} (+10 แต้ม)` });
         }
+
+        // --- Rewards System ---
+        window.addReward = async () => {
+            const name = document.getElementById('reward-name').value.trim();
+            const desc = document.getElementById('reward-desc').value.trim();
+            const image = document.getElementById('reward-image').value.trim();
+            const points = parseInt(document.getElementById('reward-points').value) || 0;
+            const stock = parseInt(document.getElementById('reward-stock').value) || 0;
+
+            if (!name || !image || points <= 0 || stock <= 0) {
+                return showToast('กรุณากรอกข้อมูลให้ครบ', 'warning');
+            }
+
+            try {
+                showLoading();
+                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'rewards'), {
+                    name, description: desc || '-', imageLink: image, 
+                    pointsRequired: points, stock: stock, createdAt: Date.now()
+                });
+                
+                document.getElementById('reward-name').value = '';
+                document.getElementById('reward-desc').value = '';
+                document.getElementById('reward-image').value = '';
+                document.getElementById('reward-points').value = '';
+                document.getElementById('reward-stock').value = '';
+                
+                hideLoading();
+                showToast('เพิ่มของรางวัลแล้ว', 'success');
+            } catch (e) {
+                hideLoading();
+                Swal.fire('ผิดพลาด', e.message, 'error');
+            }
+        };
+
+        function loadAdminRewards() {
+            onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'rewards'), (snap) => {
+                const list = document.getElementById('admin-rewards-list');
+                list.innerHTML = '';
+                if (snap.empty) {
+                    list.innerHTML = '<p class="text-center text-xs text-slate-400">ยังไม่มีของรางวัล</p>';
+                    return;
+                }
+                snap.forEach(d => {
+                    const data = d.data();
+                    list.innerHTML += `
+                        <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                            <img src="${data.imageLink}" class="w-10 h-10 rounded object-cover" onerror="this.src='https://via.placeholder.com/40'">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-700 truncate">${data.name}</p>
+                                <p class="text-[10px] text-slate-500">${data.pointsRequired} แต้ม | เหลือ ${data.stock} ชิ้น</p>
+                            </div>
+                            <button onclick="deleteReward('${d.id}')" class="text-red-400 hover:text-red-600 text-xs p-1">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        window.deleteReward = async (id) => {
+            const result = await Swal.fire({
+                title: 'ลบของรางวัล?',
+                text: 'คุณต้องการลบของรางวัลนี้หรือไม่',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก'
+            });
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'rewards', id));
+                showToast('ลบของรางวัลแล้ว');
+            }
+        };
+
+        window.loadRewards = () => {
+            onSnapshot(collection(db, 'artifacts', APP_ID, 'public', 'data', 'rewards'), (snap) => {
+                const list = document.getElementById('rewards-list');
+                list.innerHTML = '';
+                if (snap.empty) {
+                    list.innerHTML = '<p class="col-span-2 text-center text-xs text-slate-400 py-4">ยังไม่มีของรางวัล</p>';
+                    return;
+                }
+                snap.forEach(d => {
+                    const data = d.data();
+                    const canRedeem = (userData?.wastePoints || 0) >= data.pointsRequired && data.stock > 0;
+                    const stockText = data.stock > 0 ? `เหลือ ${data.stock} ชิ้น` : 'หมด';
+                    const stockClass = data.stock > 0 ? 'text-green-600' : 'text-red-500';
+                    list.innerHTML += `
+                        <div class="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+                            <img src="${data.imageLink}" class="w-full h-24 object-cover" onerror="this.src='https://via.placeholder.com/150'">
+                            <div class="p-3">
+                                <h5 class="font-bold text-sm text-slate-800 truncate">${data.name}</h5>
+                                <p class="text-[10px] text-slate-500 truncate mb-2">${data.description}</p>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-purple-600">${data.pointsRequired} แต้ม</span>
+                                    <span class="text-[10px] ${stockClass}">${stockText}</span>
+                                </div>
+                                <button onclick="redeemReward('${d.id}', '${data.name}', ${data.pointsRequired})" 
+                                    class="w-full py-1.5 rounded-lg text-xs font-bold transition ${canRedeem ? 'bg-purple-600 text-white active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
+                                    ${canRedeem ? '' : 'disabled'}>
+                                    ${canRedeem ? 'แลกของรางวัล' : (data.stock <= 0 ? 'ของหมด' : 'แต้มไม่พอ')}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        };
+
+        window.redeemReward = async (rewardId, rewardName, pointsRequired) => {
+            const result = await Swal.fire({
+                title: 'ยืนยันการแลก?',
+                html: `คุณต้องการแลก <b>${rewardName}</b><br>ใช้ ${pointsRequired} แต้ม`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#9333ea',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'แลกเลย',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (!result.isConfirmed) return;
+
+            try {
+                showLoading();
+                const rewardRef = doc(db, 'artifacts', APP_ID, 'public', 'data', 'rewards', rewardId);
+                const rewardSnap = await getDoc(rewardRef);
+                
+                if (!rewardSnap.exists()) throw new Error('ไม่พบของรางวัลนี้');
+                const rewardData = rewardSnap.data();
+                
+                if (rewardData.stock <= 0) throw new Error('ของรางวัลหมดแล้ว');
+                if ((userData?.wastePoints || 0) < rewardData.pointsRequired) throw new Error('แต้มไม่เพียงพอ');
+
+                await updateDoc(rewardRef, { stock: rewardData.stock - 1 });
+                
+                const newPoints = (userData.wastePoints || 0) - rewardData.pointsRequired;
+                await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), {
+                    wastePoints: newPoints
+                });
+
+                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'redemptions'), {
+                    uid: currentUser.uid,
+                    studentId: userData.studentId,
+                    name: userData.name,
+                    rewardId: rewardId,
+                    rewardName: rewardData.name,
+                    pointsUsed: rewardData.pointsRequired,
+                    timestamp: Date.now(),
+                    status: 'pending'
+                });
+
+                sendDiscordNotification(WEBHOOK_ADMIN, "มีการแลกของรางวัล", `นักเรียน: ${userData.name} (${userData.studentId})\nของรางวัล: ${rewardData.name}\nใช้แต้ม: ${rewardData.pointsRequired}\nแต้มคงเหลือ: ${newPoints}`);
+
+                hideLoading();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'แลกสำเร็จ!',
+                    html: `คุณได้แลก <b>${rewardData.name}</b><br>ติดต่อรับของได้ที่สภานักเรียน`,
+                    confirmButtonColor: '#9333ea'
+                });
+            } catch (e) {
+                hideLoading();
+                Swal.fire('ไม่สำเร็จ', e.message, 'error');
+            }
+        };
 
         // --- Admin QR Generators ---
         window.showMorningQR = () => {
