@@ -109,6 +109,10 @@
                     <input id="post-title" type="text" placeholder="หัวข้อ" class="w-full bg-slate-50 rounded-lg p-2 mb-2 text-sm font-bold outline-none">
                     <textarea id="post-content" rows="2" placeholder="รายละเอียด..." class="w-full bg-slate-50 rounded-lg p-2 text-sm mb-2 outline-none"></textarea>
                     <input id="post-image" type="url" placeholder="ลิงก์รูปภาพ (ไม่บังคับ)" class="w-full bg-slate-50 rounded-lg p-2 mb-2 text-sm outline-none">
+                    <div class="flex items-center gap-2 mb-3 px-1">
+                        <input type="checkbox" id="post-highlighted" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                        <label for="post-highlighted" class="text-xs text-slate-500 font-bold">ตั้งเป็นประกาศสำคัญ (Pop-up อัตโนมัติ)</label>
+                    </div>
                     <button type="button" onclick="createAnnouncement()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm w-full font-bold">โพสต์</button>
                 </div>
                 <div id="announcements-list" class="space-y-4"></div>
@@ -1024,29 +1028,49 @@
             const t = document.getElementById('post-title').value;
             const c = document.getElementById('post-content').value;
             const img = document.getElementById('post-image').value;
-            if(t) await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'announcements'), {
-                title: t, content: c, date: Date.now(), author: userData.name, imageLink: img || ''
-            });
+            const isHighlighted = document.getElementById('post-highlighted').checked;
+
+            if(t) {
+                // If this is highlighted, unhighlight others first (exclusive highlight)
+                if (isHighlighted) {
+                    const q = query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'announcements'), where("isHighlighted", "==", true));
+                    const snapshot = await getDocs(q);
+                    const batch = [];
+                    snapshot.forEach(d => batch.push(updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'announcements', d.id), { isHighlighted: false })));
+                    await Promise.all(batch);
+                }
+
+                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'announcements'), {
+                    title: t, content: c, date: Date.now(), author: userData.name, imageLink: img || '', isHighlighted: isHighlighted
+                });
+            }
             document.getElementById('post-title').value = '';
             document.getElementById('post-content').value = '';
             document.getElementById('post-image').value = '';
+            document.getElementById('post-highlighted').checked = false;
         };
 
+        let lastAutoPopupId = null;
         function loadAnnouncements() {
             onSnapshot(query(collection(db, 'artifacts', APP_ID, 'public', 'data', 'announcements'), orderBy('date', 'desc')), (snap) => {
                 const list = document.getElementById('announcements-list');
                 list.innerHTML = '';
                 if(snap.empty) list.innerHTML = '<p class="text-center text-slate-400 py-4">ยังไม่มีประกาศ</p>';
+                
+                let highlightedPost = null;
                 snap.forEach(d => {
                     const data = d.data();
+                    if (data.isHighlighted) highlightedPost = { id: d.id, ...data };
+                    
                     const date = new Date(data.date).toLocaleDateString('th-TH');
                     const imgHtml = data.imageLink ? `<img src="${data.imageLink}" class="w-full rounded-lg mt-2 mb-2 max-h-48 object-cover" onerror="this.style.display='none'">` : '';
+                    const highlightBadge = data.isHighlighted ? `<span class="bg-red-100 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded-sm mr-2">สำคัญ</span>` : '';
                     const deleteBtn = userData && userData.role === 'admin' ? `<button onclick="deleteAnnouncement('${d.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs z-10"><i class="fa-solid fa-trash"></i></button>` : '';
                     list.innerHTML += `
-                        <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500 relative cursor-pointer hover:shadow-md transition group" onclick="showHighlight('${d.id}')">
+                        <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 ${data.isHighlighted ? 'border-red-500' : 'border-blue-500'} relative cursor-pointer hover:shadow-md transition group" onclick="showHighlight('${d.id}')">
                             ${deleteBtn}
                             <div class="flex justify-between items-start mb-1">
-                                <h3 class="font-bold text-slate-800 group-hover:text-blue-600 transition pr-6">${data.title}</h3>
+                                <h3 class="font-bold text-slate-800 group-hover:text-blue-600 transition pr-6">${highlightBadge}${data.title}</h3>
                             </div>
                             <p class="text-xs text-slate-400 mb-2">${date} โดย ${data.author}</p>
                             ${imgHtml}
@@ -1057,6 +1081,12 @@
                             </div>
                         </div>`;
                 });
+
+                // Auto popup if there's a highlighted post and it's new for this session
+                if (highlightedPost && highlightedPost.id !== lastAutoPopupId) {
+                    lastAutoPopupId = highlightedPost.id;
+                    setTimeout(() => showHighlight(highlightedPost.id), 1000);
+                }
             });
         }
         
