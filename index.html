@@ -436,9 +436,9 @@
     </div>
 
     <!-- 8. AUTO POPUP MODAL (Image only - for auto popup highlighted posts) -->
-    <div id="auto-popup-modal" class="hidden fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-        <div class="relative w-full max-w-2xl">
-            <button onclick="document.getElementById('auto-popup-modal').classList.add('hidden')" class="absolute -top-12 right-0 z-10 bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center transition">
+    <div id="auto-popup-modal" class="hidden fixed inset-0 z-[200] bg-black/95 flex flex-col items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="relative w-full max-w-2xl scale-95 transition-transform duration-300" id="auto-popup-content">
+            <button onclick="closeAutoPopup()" class="absolute -top-12 right-0 z-10 bg-white/20 hover:bg-white/40 text-white w-10 h-10 rounded-full flex items-center justify-center transition">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
             <img id="auto-popup-image" src="" class="w-full rounded-2xl shadow-2xl object-contain max-h-[80vh]" alt="ประกาศสำคัญ">
@@ -1139,7 +1139,7 @@
                     lastAutoPopupId = highlightedPost.id;
                     // Show image-only popup for auto popup (highlighted posts)
                     if (highlightedPost.imageLink) {
-                        setTimeout(() => showAutoPopupImage(highlightedPost.imageLink), 1000);
+                        showAutoPopupImage(highlightedPost.imageLink);
                     }
                 }
             });
@@ -1147,9 +1147,27 @@
         
         window.showAutoPopupImage = (imageUrl) => {
             const modal = document.getElementById('auto-popup-modal');
+            const content = document.getElementById('auto-popup-content');
             const img = document.getElementById('auto-popup-image');
             img.src = imageUrl;
             modal.classList.remove('hidden');
+            // Force reflow for transition
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        };
+
+        window.closeAutoPopup = () => {
+            const modal = document.getElementById('auto-popup-modal');
+            const content = document.getElementById('auto-popup-content');
+            modal.classList.remove('opacity-100');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
         };
 
         window.showHighlight = async (id) => {
