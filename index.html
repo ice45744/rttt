@@ -406,30 +406,38 @@
 
     <!-- Firebase -->
     <!-- 7. HIGHLIGHT MODAL (Full details - when user clicks) -->
-    <div id="highlight-modal" class="hidden fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl w-full max-w-lg overflow-hidden relative shadow-2xl animate-in fade-in zoom-in duration-300">
-            <button onclick="document.getElementById('highlight-modal').classList.add('hidden')" class="absolute top-4 right-4 z-10 bg-black/20 hover:bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center transition">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-            <div id="highlight-image-container" class="hidden">
-                <img id="highlight-image" src="" class="w-full object-cover max-h-[50vh]" alt="Highlight">
+    <div id="highlight-modal" class="hidden fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl transition-all">
+            <div id="highlight-image-container" class="hidden relative aspect-video">
+                <img id="highlight-image" src="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <button onclick="document.getElementById('highlight-modal').classList.add('hidden')" class="absolute top-6 right-6 bg-white/20 backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/40 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
             <div class="p-8">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">ข่าวประชาสัมพันธ์</span>
-                    <span id="highlight-date" class="text-xs text-slate-400"></span>
-                </div>
-                <h2 id="highlight-title" class="text-2xl font-bold text-slate-800 mb-4 leading-tight"></h2>
-                <div id="highlight-content" class="text-slate-600 leading-relaxed space-y-4 whitespace-pre-wrap overflow-y-auto max-h-[30vh] pr-2 custom-scrollbar"></div>
-                <div class="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+                <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full gradient-bg flex items-center justify-center text-white font-bold text-lg" id="highlight-avatar"></div>
+                        <div id="highlight-avatar" class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">?</div>
                         <div>
-                            <p class="text-sm font-bold text-slate-700" id="highlight-author"></p>
-                            <p class="text-[10px] text-slate-400">คณะกรรมการนักเรียน</p>
+                            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest" id="highlight-author">ADMIN</p>
+                            <p class="text-xs text-slate-400 font-medium" id="highlight-date">...</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('highlight-modal').classList.add('hidden')" class="bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg active:scale-95 transition">ปิดหน้าต่าง</button>
+                    <button onclick="document.getElementById('highlight-modal').classList.add('hidden')" class="bg-slate-50 text-slate-400 w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <h2 id="highlight-title" class="text-2xl font-black text-slate-800 mb-4 leading-tight"></h2>
+                <div class="max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                    <div id="highlight-content" class="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base"></div>
+                </div>
+                
+                <div class="mt-8 flex justify-end">
+                    <button onclick="document.getElementById('highlight-modal').classList.add('hidden')" class="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-xl hover:bg-slate-800 active:scale-95 transition-all">
+                        รับทราบ
+                    </button>
                 </div>
             </div>
         </div>
@@ -1116,20 +1124,29 @@
                     
                     const date = new Date(data.date).toLocaleDateString('th-TH');
                     const imgHtml = data.imageLink ? `<img src="${data.imageLink}" class="w-full rounded-lg mt-2 mb-2 max-h-48 object-cover" onerror="this.style.display='none'">` : '';
-                    const highlightBadge = data.isHighlighted ? `<span class="bg-red-100 text-red-600 text-[9px] font-bold px-1.5 py-0.5 rounded-sm mr-2">สำคัญ</span>` : '';
-                    const deleteBtn = userData && userData.role === 'admin' ? `<button onclick="deleteAnnouncement('${d.id}')" class="absolute top-2 right-2 text-red-400 hover:text-red-600 text-xs z-10"><i class="fa-solid fa-trash"></i></button>` : '';
+                    const highlightBadge = data.isHighlighted ? `<span class="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full mr-2 border border-red-100">สำคัญ</span>` : '';
+                    const deleteBtn = userData && userData.role === 'admin' ? `<button onclick="deleteAnnouncement('${d.id}')" class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors z-10 p-1"><i class="fa-solid fa-trash-can"></i></button>` : '';
                     list.innerHTML += `
-                        <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 ${data.isHighlighted ? 'border-red-500' : 'border-blue-500'} relative cursor-pointer hover:shadow-md transition group" onclick="showHighlight('${d.id}')">
+                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 relative cursor-pointer hover:shadow-md hover:border-blue-200 transition-all duration-300 group" onclick="showHighlight('${d.id}')">
                             ${deleteBtn}
-                            <div class="flex justify-between items-start mb-1">
-                                <h3 class="font-bold text-slate-800 group-hover:text-blue-600 transition pr-6">${highlightBadge}${data.title}</h3>
+                            <div class="mb-3">
+                                <div class="flex items-center gap-1 mb-1">
+                                    ${highlightBadge}
+                                    <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">${date}</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">${data.title}</h3>
                             </div>
-                            <p class="text-xs text-slate-400 mb-2">${date} โดย ${data.author}</p>
                             ${imgHtml}
-                            <p class="text-sm text-slate-600 line-clamp-3">${data.content}</p>
-                            <div class="mt-3 flex items-center text-[10px] font-bold text-blue-500 uppercase tracking-tighter">
-                                <span>คลิกเพื่ออ่านเพิ่มเติม</span>
-                                <i class="fa-solid fa-chevron-right ml-1 animate-pulse"></i>
+                            <p class="text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4">${data.content}</p>
+                            <div class="flex items-center justify-between pt-3 border-t border-slate-50">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-[10px] font-bold text-blue-600 border border-blue-100 uppercase">${data.author[0]}</div>
+                                    <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-tighter">${data.author}</span>
+                                </div>
+                                <div class="flex items-center text-[10px] font-bold text-blue-500 uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+                                    <span>อ่านต่อ</span>
+                                    <i class="fa-solid fa-arrow-right-long ml-2"></i>
+                                </div>
                             </div>
                         </div>`;
                 });
@@ -1196,7 +1213,7 @@
             if (!userSnap.empty) {
                 const uData = userSnap.docs[0].data();
                 if (uData.avatar) {
-                    avatar.innerHTML = `<img src="${uData.avatar}" class="w-full h-full object-cover rounded-full">`;
+                    avatar.innerHTML = `<img src="${uData.avatar}" class="w-full h-full object-cover">`;
                     avatar.classList.remove('gradient-bg', 'flex', 'items-center', 'justify-center', 'text-white', 'text-lg');
                 } else {
                     avatar.innerText = data.author[0];
