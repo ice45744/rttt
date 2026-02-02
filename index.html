@@ -173,8 +173,11 @@
                     <div id="admin-waste-search" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-blue-100 mb-4">
                         <h4 class="font-bold text-slate-700 mb-2 text-sm">ค้นหานักเรียน (Admin)</h4>
                         <div class="flex gap-2">
-                            <input id="search-student-id" type="text" placeholder="รหัสนักเรียน..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm outline-none">
-                            <button onclick="searchStudentAndAddStamp()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold">เพิ่มแต้ม</button>
+                            <div class="flex-1 relative">
+                                <input id="search-student-id" type="text" placeholder="พิมพ์รหัสหรือชื่อนักเรียน..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-sm outline-none" autocomplete="off">
+                                <div id="student-suggestions" class="hidden absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-1 max-h-48 overflow-y-auto shadow-lg z-50"></div>
+                            </div>
+                            <button onclick="searchStudentAndAddStamp()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">เพิ่มแต้ม</button>
                         </div>
                     </div>
 
@@ -578,6 +581,67 @@
         };
 
         // --- Admin Tools ---
+        let allStudents = [];
+        
+        async function loadAllStudentsForAutocomplete() {
+            const snapshot = await getDocs(collection(db, 'artifacts', APP_ID, 'public', 'data', 'users'));
+            allStudents = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.studentId && data.name) {
+                    allStudents.push({ studentId: data.studentId, name: data.name });
+                }
+            });
+        }
+
+        function setupStudentAutocomplete() {
+            const input = document.getElementById('search-student-id');
+            const suggestionsDiv = document.getElementById('student-suggestions');
+            
+            input.addEventListener('input', () => {
+                const value = input.value.toLowerCase().trim();
+                if (value.length < 1) {
+                    suggestionsDiv.classList.add('hidden');
+                    return;
+                }
+                
+                const filtered = allStudents.filter(s => 
+                    s.studentId.toLowerCase().includes(value) || 
+                    s.name.toLowerCase().includes(value)
+                ).slice(0, 10);
+                
+                if (filtered.length === 0) {
+                    suggestionsDiv.classList.add('hidden');
+                    return;
+                }
+                
+                suggestionsDiv.innerHTML = filtered.map(s => `
+                    <div class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0 transition" onclick="selectStudent('${s.studentId}')">
+                        <div class="font-bold text-sm text-slate-700">${s.name}</div>
+                        <div class="text-xs text-slate-400">${s.studentId}</div>
+                    </div>
+                `).join('');
+                suggestionsDiv.classList.remove('hidden');
+            });
+            
+            input.addEventListener('focus', () => {
+                if (input.value.trim().length >= 1) {
+                    input.dispatchEvent(new Event('input'));
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    suggestionsDiv.classList.add('hidden');
+                }
+            });
+        }
+        
+        window.selectStudent = (studentId) => {
+            document.getElementById('search-student-id').value = studentId;
+            document.getElementById('student-suggestions').classList.add('hidden');
+        };
+
         window.searchStudentAndAddStamp = async () => {
             const sId = document.getElementById('search-student-id').value.trim();
             if(!sId) return;
@@ -705,6 +769,8 @@
                         document.getElementById('admin-waste-search').classList.remove('hidden');
                         loadAdminTasks();
                         loadAdminReports();
+                        loadAllStudentsForAutocomplete();
+                        setupStudentAutocomplete();
                         loadAdminScoreboard();
                         loadAdminRewards();
                     }
