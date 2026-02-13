@@ -48,6 +48,7 @@ img {
     object-fit: contain;
     display: block;
     margin: 0 auto;
+    content-visibility: auto;
 }
 
 .announcement-img {
@@ -56,6 +57,7 @@ img {
     object-fit: cover;
     border-radius: 0.75rem;
     background-color: #f1f5f9;
+    loading: lazy;
 }
 
 #highlight-image, #auto-popup-image {

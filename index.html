@@ -6,9 +6,14 @@
     <title>ระบบดิจิทัล ส.ท. | สภานักเรียน</title>
     <meta name="description" content="ระบบจัดการข้อมูลนักเรียน ประกาศข่าวสาร และกิจกรรมความดี สภานักเรียน ระบบดิจิทัลเพื่อการพัฒนาโรงเรียน">
     <meta name="keywords" content="สภานักเรียน, ระบบดิจิทัล, โรงเรียน, ความดี, ธนาคารขยะ, เช็คชื่อ">
-    <meta name="author" content="พรรคส.ท.ก้าวหน้า และคณะกรรมการนักเรียน">
+    <!-- Performance & Security -->
+    <link rel="preconnect" href="https://www.gstatic.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://www.gstatic.com">
     
-    <!-- Open Graph / Facebook -->
+    <!-- CSP (Basic) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' https: data: blob:;">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://student-council.replit.app/">
     <meta property="og:title" content="ระบบดิจิทัล ส.ท. | สภานักเรียน">
@@ -531,9 +536,17 @@
             
             try {
                 showLoading();
-                await signInWithEmailAndPassword(auth, email, password);
-                // The onAuthStateChanged listener will handle the UI switch
-            } catch (error) {
+                const studentId = document.getElementById('login-student-id').value.trim();
+                const password = document.getElementById('login-password').value;
+                
+                // Rate limiting check (simple)
+                const lastLogin = localStorage.getItem('last_login_attempt');
+                if (lastLogin && Date.now() - parseInt(lastLogin) < 2000) {
+                    throw new Error('กรุณารอสักครู่ก่อนลองใหม่อีกครั้ง');
+                }
+                localStorage.setItem('last_login_attempt', Date.now());
+
+                if(!studentId || !password) return showToast('กรุณากรอกข้อมูล', 'warning');
                 hideLoading();
                 Swal.fire('ผิดพลาด', 'รหัสนักเรียนหรือรหัสผ่านไม่ถูกต้อง', 'error');
             }
