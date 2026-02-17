@@ -223,7 +223,7 @@
 
                     <button type="button" onclick="startScanner()" class="w-full bg-white border-2 border-dashed border-blue-400 text-blue-600 rounded-2xl py-6 font-bold flex flex-col items-center justify-center hover:bg-blue-50 transition shadow-sm mb-6">
                         <i class="fa-solid fa-qrcode text-3xl mb-2"></i>
-                        <span>สแกน QR รับแต้มขยะ / กิจกรรม</span>
+                        <span>สแกน QR รับแต้มธนาคารขยะ / กิจกรรม</span>
                     </button>
 
                     <!-- Rewards Section -->
@@ -304,7 +304,7 @@
 
                     <!-- Waste QR -->
                     <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
-                        <h4 class="font-bold text-sm text-slate-700 mb-3">3. แต้มขยะ</h4>
+                        <h4 class="font-bold text-sm text-slate-700 mb-3">3. แต้มธนาคารขยะ</h4>
                         <button onclick="generateAdminQR()" id="btn-gen-qr" class="w-full border border-purple-500 text-purple-600 rounded-lg py-2 text-sm font-bold hover:bg-purple-50">
                             <i class="fa-solid fa-qrcode mr-2"></i> สร้าง QR (5 นาที)
                         </button>
@@ -347,7 +347,7 @@
                                 <div id="scoreboard-good" class="space-y-2 max-h-40 overflow-y-auto"></div>
                             </div>
                             <div>
-                                <h5 class="text-[10px] font-bold text-green-600 mb-2 uppercase">อันดับแต้มขยะ</h5>
+                                <h5 class="text-[10px] font-bold text-green-600 mb-2 uppercase">อันดับแต้มธนาคารขยะ</h5>
                                 <div id="scoreboard-waste" class="space-y-2 max-h-40 overflow-y-auto"></div>
                             </div>
                         </div>
@@ -713,7 +713,7 @@
                     showToast('เช็คชื่อสำเร็จ! +5 แต้มความดี', 'success');
                 } else if(data.type === 'waste_points' && data.exp > Date.now()) {
                     await updateDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'users', currentUser.uid), { wastePoints: (userData.wastePoints||0) + (data.points || 10) });
-                    showToast(`ได้รับแต้มขยะ +${data.points || 10} แต้ม`, 'success');
+                    showToast(`ได้รับแต้มธนาคารขยะ +${data.points || 10} แต้ม`, 'success');
                 } else {
                     showToast('QR Code ไม่ถูกต้องหรือหมดอายุ', 'error');
                 }
