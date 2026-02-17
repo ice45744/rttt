@@ -81,9 +81,9 @@
         <p class="text-slate-500 text-sm font-medium animate-pulse">กำลังเชื่อมต่อระบบ...</p>
     </div>
 
-    <!-- 2. AUTH SCREEN -->
-    <div id="auth-container" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-xl p-8 w-full max-w-md border border-blue-50">
+    <!-- 2. AUTH SCREEN (Login/Register) -->
+    <div id="auth-container" class="hidden p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-blue-50 relative z-10">
             <div class="text-center mb-6">
                 <div class="mx-auto mb-4 flex justify-center">
                     <img src="https://www.dropbox.com/scl/fi/whfakycfyhqvp0k08rmg0/1769767494208.png?rlkey=gcig41plyyr1rbljsuzfl9vkq&st=0udcfkxq&dl=1" class="w-24 h-24 object-contain" alt="Logo">
@@ -629,6 +629,8 @@
                     setupApp();
                 }
             } else {
+                // Not logged in: Show only Auth Screen
+                document.getElementById('app-container').classList.add('hidden');
                 document.getElementById('loading-screen').classList.add('opacity-0');
                 setTimeout(() => {
                     document.getElementById('loading-screen').classList.add('hidden');
@@ -639,6 +641,7 @@
 
         // --- Core UI ---
         function setupApp() {
+            // Logged in: Hide Auth Screen, Show Main App
             document.getElementById('auth-container').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('loading-screen').classList.add('opacity-0');
