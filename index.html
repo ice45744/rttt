@@ -322,6 +322,13 @@
                                 <input id="reward-stock" type="number" placeholder="จำนวน" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2 text-sm outline-none" min="1">
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <input type="file" id="imgbb-upload-reward" accept="image/*" class="hidden" onchange="uploadToImgBB(this, 'reward-image')">
+                            <button type="button" onclick="document.getElementById('imgbb-upload-reward').click()" class="w-full bg-slate-50 border border-slate-200 border-dashed rounded-lg p-2 text-xs text-slate-500 font-bold">
+                                <i class="fa-solid fa-image mr-1"></i> อัปโหลดรูปของรางวัล
+                            </button>
+                            <p id="upload-status-reward" class="text-[10px] text-center text-slate-400 mt-1"></p>
+                        </div>
                         <button onclick="addReward()" class="w-full bg-purple-600 text-white rounded-lg py-2 text-sm font-bold">
                             <i class="fa-solid fa-plus mr-2"></i>เพิ่มของรางวัล
                         </button>
@@ -1593,7 +1600,11 @@
             const file = input.files[0];
             if (!file) return;
 
-            const statusId = targetId === 'post-image' ? 'upload-status-post' : 'upload-status-deed';
+            let statusId;
+            if (targetId === 'post-image') statusId = 'upload-status-post';
+            else if (targetId === 'deed-link') statusId = 'upload-status-deed';
+            else if (targetId === 'reward-image') statusId = 'upload-status-reward';
+            
             const statusEl = document.getElementById(statusId);
             const targetEl = document.getElementById(targetId);
 
