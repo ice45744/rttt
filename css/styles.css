@@ -98,19 +98,12 @@ input {
 .max-w-md { max-width: 28rem; width: 100%; }
 
 #auth-container {
-    position: fixed;
-    inset: 0;
-    z-index: 90;
-    background-color: #F0F9FF;
+    display: -webkit-flex;
     display: flex;
+    -webkit-align-items: center;
     align-items: center;
+    -webkit-justify-content: center;
     justify-content: center;
-    overflow-y: auto;
-}
-
-#app-container {
-    min-height: 100vh;
-    background-color: #F0F9FF;
 }
 
 .text-center { text-align: center; }
