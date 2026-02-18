@@ -58,7 +58,16 @@ img {
     object-fit: cover;
     border-radius: 0.75rem;
     background-color: #f1f5f9;
-    loading: lazy;
+    content-visibility: auto;
+}
+
+.lazy-load {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.lazy-load.loaded {
+    opacity: 1;
 }
 
 #highlight-image, #auto-popup-image {
