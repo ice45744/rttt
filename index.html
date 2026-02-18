@@ -241,13 +241,25 @@
             <div id="page-report" class="page-content hidden">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <h2 class="text-lg font-bold text-slate-800 mb-4 text-center">แจ้งปัญหา</h2>
-                    <select id="report-topic" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 text-sm outline-none">
+                    <select id="report-topic" class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4 text-sm outline-none">
                         <option>อุปกรณ์เสียหาย</option>
                         <option>ความสะอาด</option>
                         <option>ทะเลาะวิวาท</option>
                         <option>อื่นๆ</option>
                     </select>
-                    <textarea id="report-desc" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 mb-6 text-sm outline-none" placeholder="รายละเอียด..."></textarea>
+                    <textarea id="report-desc" rows="5" class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4 text-sm outline-none" placeholder="รายละเอียด..."></textarea>
+                    
+                    <!-- Upload Image for Report -->
+                    <div class="mb-4">
+                        <input type="file" id="imgbb-upload-report" accept="image/*" class="hidden" onchange="uploadToImgBB(this, 'report-image')">
+                        <button type="button" onclick="document.getElementById('imgbb-upload-report').click()" class="w-full bg-blue-50 border border-blue-200 border-dashed rounded-xl p-3 text-center mb-1">
+                            <i class="fa-solid fa-cloud-upload text-blue-400 mb-1"></i>
+                            <div class="text-xs text-blue-700 font-bold">อัปโหลดรูปภาพประกอบ (ถ้ามี)</div>
+                        </button>
+                        <p id="upload-status-report" class="text-[10px] text-center text-slate-400"></p>
+                    </div>
+                    <input id="report-image" type="url" placeholder="ลิงก์รูปภาพประกอบ (ถ้ามี)" class="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 mb-6 text-sm outline-none">
+
                     <button onclick="submitReport()" class="w-full bg-slate-800 text-white rounded-xl py-3 font-bold shadow-lg">แจ้งเรื่อง</button>
                 </div>
             </div>
@@ -1514,12 +1526,21 @@
         window.submitReport = async () => {
             const t = document.getElementById('report-topic').value;
             const d = document.getElementById('report-desc').value;
+            const img = document.getElementById('report-image').value;
             if(d) {
-                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'reports'), { topic:t, description:d, studentId:userData.studentId, uid:currentUser.uid });
+                await addDoc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'reports'), { 
+                    topic:t, 
+                    description:d, 
+                    image: img || '',
+                    studentId:userData.studentId, 
+                    uid:currentUser.uid 
+                });
                 
-                sendDiscordNotification(WEBHOOK_REPORT, "แจ้งปัญหาใหม่จากผู้ใช้งาน", `นักเรียน: ${userData.name} (${userData.studentId})\nหัวข้อ: ${t}\nรายละเอียด: ${d}`);
+                sendDiscordNotification(WEBHOOK_REPORT, "แจ้งปัญหาใหม่จากผู้ใช้งาน", `นักเรียน: ${userData.name} (${userData.studentId})\nหัวข้อ: ${t}\nรายละเอียด: ${d}${img ? '\nรูปภาพ: ' + img : ''}`);
                 
                 document.getElementById('report-desc').value = '';
+                document.getElementById('report-image').value = '';
+                if(document.getElementById('upload-status-report')) document.getElementById('upload-status-report').innerText = '';
                 showToast('ส่งเรื่องแล้ว');
             }
         };
@@ -1604,6 +1625,7 @@
             if (targetId === 'post-image') statusId = 'upload-status-post';
             else if (targetId === 'deed-link') statusId = 'upload-status-deed';
             else if (targetId === 'reward-image') statusId = 'upload-status-reward';
+            else if (targetId === 'report-image') statusId = 'upload-status-report';
             
             const statusEl = document.getElementById(statusId);
             const targetEl = document.getElementById(targetId);
