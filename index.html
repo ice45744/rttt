@@ -624,7 +624,7 @@
             const name = document.getElementById('reg-name').value;
             const studentId = document.getElementById('reg-student-id').value.trim();
             const password = document.getElementById('reg-password').value;
-            const secret = document.getElementById('reg-secret').value;
+            const secret = document.getElementById('reg-secret').value.replace(/\s+/g, '');
 
             if(!name || !studentId || !password) return showToast('ข้อมูลไม่ครบ', 'warning');
             const email = `${studentId}@student.local`;
