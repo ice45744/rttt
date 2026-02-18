@@ -410,6 +410,14 @@
                         
                         <div class="mb-6">
                             <label class="text-xs font-bold text-slate-500 mb-2 block text-center">เปลี่ยนรูปโปรไฟล์</label>
+                            <div class="mb-3">
+                                <input type="file" id="imgbb-upload-avatar" accept="image/*" class="hidden" onchange="uploadToImgBB(this, 'edit-avatar-link')">
+                                <button type="button" onclick="document.getElementById('imgbb-upload-avatar').click()" class="w-full bg-blue-50 border border-blue-200 border-dashed rounded-xl p-3 text-center mb-1">
+                                    <i class="fa-solid fa-camera text-blue-400 mb-1"></i>
+                                    <div class="text-xs text-blue-700 font-bold">อัปโหลดรูปภาพ (ImgBB)</div>
+                                </button>
+                                <p id="upload-status-avatar" class="text-[10px] text-center text-slate-400"></p>
+                            </div>
                             <input type="url" id="edit-avatar-link" placeholder="วางลิงก์รูปภาพ (URL)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
@@ -1626,6 +1634,8 @@
             else if (targetId === 'deed-link') statusId = 'upload-status-deed';
             else if (targetId === 'reward-image') statusId = 'upload-status-reward';
             else if (targetId === 'report-image') statusId = 'upload-status-report';
+            else if (targetId === 'edit-avatar-link') statusId = 'upload-status-avatar';
+            else if (targetId === 'profile-avatar-url') statusId = 'upload-status-avatar';
             
             const statusEl = document.getElementById(statusId);
             const targetEl = document.getElementById(targetId);
