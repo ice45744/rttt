@@ -22,6 +22,14 @@ A Thai language Student Council web application - a single-page application buil
 - Problem reporting by users and Admin management with delete option
 - Morning check-in via QR code scanning
 - Waste bank stamp collection system
+- User and Admin Manual system (separate `manual.html` file)
+
+## Recent Changes (February 19, 2026)
+- Added `manual.html` containing General User Manual and Admin Manual.
+- Integrated manual links into `index.html`:
+  - Added "คู่มือการใช้งาน" (Manual) link in User Profile section.
+  - Added "คู่มือ Admin" (Admin Manual) link in Admin Panel section.
+- Admin manual is accessible via `manual.html?mode=admin`.
 
 ## Recent Changes (January 31, 2026)
 - Renamed system to "ระบบดิจิทัล ส.ท." (S.T. Digital System)
