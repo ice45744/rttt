@@ -61,6 +61,11 @@ img {
     content-visibility: auto;
 }
 
+.content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 500px;
+}
+
 .lazy-load {
     opacity: 0;
     transition: opacity 0.3s;
